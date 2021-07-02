@@ -1,38 +1,35 @@
 from machine import UART, Pin, delay, micros, elapsed_micros
 import utime
 
+# todo: maybe keep these in flash.
+AT_ENABLE_NETWORK_REGISTRATION = 'AT+CEREG=1'
+AT_ENABLE_SIGNALING_CONNECTION_URC = 'AT+CSCON=1'
+AT_ENABLE_POWER_SAVING_MODE = 'AT+NPSMR=1'
+AT_ENABLE_ALL_RADIO_FUNCTIONS = 'AT+CFUN=1'
+AT_CLOSE_SOCKET = 'AT+NSOCL'
+AT_GET_IP = 'AT+CGPADDR'
+AT_SEND_TO = 'AT+NSOST'
+AT_CHECK_CONNECTION_STATUS = 'AT+CSCON?'
+AT_RADIO_INFORMATION = 'AT+NUESTATS="RADIO"'
+DEFAULT_BANDS = [20]
+AT_CREATE_UDP_SOCKET = 'AT+USOCR=17'
+AT_CREATE_TCP_SOCKET = 'AT+USOCR=6'
+AT_ENABLE_LTE_M_RADIO = 'AT+URAT=7'
+AT_ENABLE_NBIOT_RADIO = 'AT+URAT=8'
+AT_CLOSE_SOCKET = 'AT+USOCL'
+AT_REBOOT = 'AT+CFUN=15'  # R4 specific
+REBOOT_TIME = 10
+SUPPORTED_SOCKET_TYPES = ['UDP', 'TCP']
+SUPPORTED_RATS = {'NBIOT': AT_ENABLE_NBIOT_RADIO,
+                    'LTEM': AT_ENABLE_LTE_M_RADIO}
+
 class CommandError(Exception):
     pass
-
 
 class CommandFailure(Exception):
     pass
 
 class ubloxSARA(object):
-
-    # todo: maybe keep these in flash.
-    AT_ENABLE_NETWORK_REGISTRATION = 'AT+CEREG=1'
-    AT_ENABLE_SIGNALING_CONNECTION_URC = 'AT+CSCON=1'
-    AT_ENABLE_POWER_SAVING_MODE = 'AT+NPSMR=1'
-    AT_ENABLE_ALL_RADIO_FUNCTIONS = 'AT+CFUN=1'
-    AT_REBOOT = 'AT+NRB'
-    AT_CLOSE_SOCKET = 'AT+NSOCL'
-    AT_GET_IP = 'AT+CGPADDR'
-    AT_SEND_TO = 'AT+NSOST'
-    AT_CHECK_CONNECTION_STATUS = 'AT+CSCON?'
-    AT_RADIO_INFORMATION = 'AT+NUESTATS="RADIO"'
-    DEFAULT_BANDS = [20]
-    AT_CREATE_UDP_SOCKET = 'AT+USOCR=17'
-    AT_CREATE_TCP_SOCKET = 'AT+USOCR=6'
-    AT_ENABLE_LTE_M_RADIO = 'AT+URAT=7'
-    AT_ENABLE_NBIOT_RADIO = 'AT+URAT=8'
-    AT_CLOSE_SOCKET = 'AT+USOCL'
-    AT_REBOOT = 'AT+CFUN=15'  # R4 specific
-    REBOOT_TIME = 10
-    SUPPORTED_SOCKET_TYPES = ['UDP', 'TCP']
-    SUPPORTED_RATS = {'NBIOT': AT_ENABLE_NBIOT_RADIO,
-                      'LTEM': AT_ENABLE_LTE_M_RADIO}
-
     def __init__(self, uart, baudRate=115200, powerPin = None, statusPin = None, resetPin = None):
         """Initialize this module. uart may be an integer or an instance 
         of machine.UART. baudRate can be used to set the Baud rate for the 
@@ -52,12 +49,10 @@ class ubloxSARA(object):
         
         if powerPin:
             self.powerPin = Pin(powerPin, Pin.OUT_PP)
-            pass
-        else: 
-            raise Exception("Argument uart must not be 'None'!")
+            
 
 
-    def _send_command(self, cmd, timeout=0, debug=False):
+    def send_command(self, cmd, timeout=0, debug=False):
         """Send a command to the SARA module over UART and return the 
         output.
         After sending the command there is a 1 second timeout while 
@@ -134,3 +129,6 @@ class ubloxSARA(object):
             if not okay and cmd_timeout == 0 and debug:
                 print("%8i - RX-Timeout occured and no 'OK' received!" % (elapsed_micros(start)))
         return cmd_output
+    
+    def checkRadioStatus(self):
+        return self.send_command(AT_RADIO_INFORMATION)
