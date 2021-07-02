@@ -1,7 +1,6 @@
 from machine import UART, Pin, delay, micros, elapsed_micros
 import utime
 
-
 class CommandError(Exception):
     pass
 
@@ -9,13 +8,9 @@ class CommandError(Exception):
 class CommandFailure(Exception):
     pass
 
-
-class UnknownWIFIModeError(Exception):
-    pass
-
-
 class ubloxSARA(object):
 
+    # todo: maybe keep these in flash.
     AT_ENABLE_NETWORK_REGISTRATION = 'AT+CEREG=1'
     AT_ENABLE_SIGNALING_CONNECTION_URC = 'AT+CSCON=1'
     AT_ENABLE_POWER_SAVING_MODE = 'AT+NPSMR=1'
@@ -37,11 +32,14 @@ class ubloxSARA(object):
     SUPPORTED_SOCKET_TYPES = ['UDP', 'TCP']
     SUPPORTED_RATS = {'NBIOT': AT_ENABLE_NBIOT_RADIO,
                       'LTEM': AT_ENABLE_LTE_M_RADIO}
-                      
+
     def __init__(self, uart, baudRate=115200, powerPin = None, statusPin = None, resetPin = None):
         """Initialize this module. uart may be an integer or an instance 
-        of pyb.UART. baudRate can be used to set the Baud rate for the 
-        serial communication."""
+        of machine.UART. baudRate can be used to set the Baud rate for the 
+        serial communication. 
+        Optional power pin specified will perform a power cycle at init
+        Optional status pin connected to GPIO1 of SARA module provides network readiness
+        Optional reset pin"""
         if uart:
             if type(uart) is int:
                 self.uart = UART(uart, baudRate)
@@ -60,10 +58,10 @@ class ubloxSARA(object):
 
 
     def _send_command(self, cmd, timeout=0, debug=False):
-        """Send a command to the ESP8266 module over UART and return the 
+        """Send a command to the SARA module over UART and return the 
         output.
         After sending the command there is a 1 second timeout while 
-        waiting for an anser on UART. For long running commands (like AP 
+        waiting for an answer on UART. For long running commands (like AP 
         scans) there is an additional 3 seconds grace period to return 
         results over UART.
         Raises an CommandError if an error occurs and an CommandFailure 
